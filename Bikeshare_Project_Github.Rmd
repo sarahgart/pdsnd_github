@@ -132,7 +132,7 @@ summary(WAS_filtered)
 
 ```
 ###ANSWER QUESTION 1: Discussion
-I wanted to investigate the differences and similarities in the rental time of the bikes in the three cities within 24 hours of users picking up the bike; i.e. how long does it take people to bring the bike back to a station after having rented it? To answer this question, I calculated the mean and median value for all rental times (trip duration) 24 hours and less for each city and plotted the corresponding distribution curve.
+I wanted to investigate the differences and similarities in the rental time of the bikes in the three cities within 24 hours of users picking up the bike; i.e. how long does it take people to bring the bike back to a station after having rented it? To answer this question, I calculated the mean and median value for all rental times (i.e. the mean and median of all trip durations) 24 hours and less for each city and plotted the corresponding distribution curves.
 
 What I found was that the distributions look very similar for the three cities: left skewed, with their peaks at a similar time. The graph for New York City shows a slightly higher and more defined peak than those of the other two cities. This fits with the fact that the medan and median rental durations in New York City is lower than in Chicago and Washington.
 
@@ -158,7 +158,7 @@ plot2 <- ggplot(df_bikeshare_user, aes(x = df_bikeshare_user$trip_duration/60,  
   # scale_y_continuous(labels = scales::percent) +
   labs(title = "Customer or Subscriber: Who Rents Bikes for 24h or less?") +
   xlab("Trip Rental Time (hours)") +
-  ylab("Frequency of Bike Rentals") +
+  ylab("Number of Bike Rentals") +
   facet_wrap(~city_code, 
              labeller = labeller(city_code = c("CHI" ="Chicago", 
                                               "NYC" = "New York City",
