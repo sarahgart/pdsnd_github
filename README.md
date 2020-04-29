@@ -11,7 +11,7 @@ Question 2: Are there differences in the types of users (customer vs subscriber)
 Question 3: Are there differences in the days of the week when customers and subscribers rent bikes for 24 hours or less?
 
 ### Files used
-The data is found the three csv files, one for each city: "chicago.csv", "nyc.csv", and "washington.csv". The R file with the code as well as the html output are available.
+The R file with the code as well as the corresponding html output are available in this repository. The data is found the three csv files, one for each city: "chicago.csv", "nyc.csv", and "washington.csv"; these files are stored only locally.  
 
 ### Credits
 The data was supplied by Udacity in the Nanodegree Program "Programming for Datascience with R". Credits go to the mentors and teachers of Udacity for their teaching and trouble-shooting support.  
