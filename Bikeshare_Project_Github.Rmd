@@ -158,7 +158,7 @@ plot2 <- ggplot(df_bikeshare_user, aes(x = df_bikeshare_user$trip_duration/60,  
   # scale_y_continuous(labels = scales::percent) +
   labs(title = "Customer or Subscriber: Who Rents Bikes for 24h or less?") +
   xlab("Trip Rental Time (hours)") +
-  ylab("Frequency of Bike Rentals") +
+  ylab("Number of Bike Rentals") +
   facet_wrap(~city_code, 
              labeller = labeller(city_code = c("CHI" ="Chicago", 
                                               "NYC" = "New York City",
