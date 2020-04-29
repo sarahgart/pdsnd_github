@@ -5,7 +5,7 @@
 Investigating the Bikeshare Database using R
 
 ### Description
-This Database contains rental data from three cities: Chicago, New York City, and Washington. Using R, this database was investigated to answer the following questions:
+This database contains bike rental data from three cities: Chicago, New York City, and Washington. Using R, this database was investigated to answer the following questions:
 Question 1: How long does it take people to return their rented bikes within 24 hours of having picked it up?
 Question 2: Are there differences in the types of users (customer vs subscriber) for each city that rent and return bikes within 24 hours?
 Question 3: Are there differences in the days of the week when customers and subscribers rent bikes for 24 hours or less?
