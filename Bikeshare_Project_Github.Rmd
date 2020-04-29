@@ -1,0 +1,362 @@
+---
+title: "Bikeshare R Project"
+author: "Sarah Gartenmann"
+date: "April 2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Getting Ready
+Loading packages
+```{r library-setup, include=FALSE}
+# install.packages('ggplot2')
+# install.packages('ggpubr')
+# install.packages('dplyr')
+# install.packages('tidyverse')
+
+library(tidyverse)
+library(dplyr)
+library(ggplot2)
+library(ggpubr)
+```
+
+Importing data and generating one dataframe 
+```{r import-data, include=FALSE}
+#reading in data files
+getwd()
+file_list <- list.files("G:/My Drive/2020/R/Udacity/Bikeshare/Data")
+
+CHI <- read_csv('chicago.csv') %>%
+  mutate(city_code = "CHI")
+NYC <- read_csv('new-york-city.csv') %>%
+  mutate(city_code = "NYC")
+WAS <- read_csv('washington.csv') %>%
+  mutate(city_code = "WAS")
+
+# Create one dataframe from all three files. Bind NYC and WAS to the bottom of CHI, select only the columns that we want (rename would add all columns, select only selected ones)
+df_bikeshare <- CHI %>%
+  bind_rows(NYC) %>%
+  bind_rows(WAS) %>%
+  select(start_time = `Start Time`,
+         end_time = `End Time`,
+         trip_duration = `Trip Duration`,
+         start_station = `Start Station`,
+         end_station = `End Station`,
+         user_type = `User Type`,
+         gender = `Gender`,
+         birth_year = `Birth Year`,
+         city_code)
+```
+
+###QUESTION 1: 
+How long does it take people to return their rented bikes within 24 hours of having picked it up?
+
+###ANSWER QUESTION 1: Code
+```{r data-wrangling}
+#The trip duration values for Washington have three decimal points - let us round them (and everything else) to 0 digits.
+
+df_bikeshare <- df_bikeshare %>%
+  mutate(trip_duration = round(trip_duration, 0))
+
+#Filtering data to only have values <=1440  (24hours)
+
+df_bikeshare_filtered <- df_bikeshare %>%
+  filter(trip_duration <= 1440) %>%
+  select(start_time, end_time, trip_duration, city_code)
+
+```
+```{r Question 1 generating stats and visualisation}
+
+#Calculating the median and mean values
+
+CHI_filtered <- df_bikeshare_filtered %>%
+  filter(city_code == "CHI")
+NYC_filtered <- df_bikeshare_filtered %>%
+  filter(city_code == "NYC")
+WAS_filtered <- df_bikeshare_filtered %>%
+  filter(city_code == "WAS")
+
+CHIMed <- round((median(CHI_filtered$trip_duration)/60), digits = 1)
+NYCMed <- round((median(NYC_filtered$trip_duration)/60), digits = 1)
+WASMed <- round((median(WAS_filtered$trip_duration)/60), digits = 1)
+
+CHIMean <- round((mean(CHI_filtered$trip_duration)/60), digits = 1)
+NYCMean <- round((mean(NYC_filtered$trip_duration)/60), digits = 1)
+WASMean <- round((mean(WAS_filtered$trip_duration)/60), digits = 1)
+
+median_values <- data.frame(label = c((paste0("median = ",CHIMed, "hours")), (paste0("median = ", NYCMed, "hours")), (paste0("median = ", WASMed, "hours"))), city_code = c("CHI", "NYC", "WAS"))
+mean_values <- data.frame(label = c((paste0("mean = ",CHIMean, "hours")), (paste0("mean = ", NYCMean, "hours")), (paste0("mean = ", WASMean, "hours"))), city_code = c("CHI", "NYC", "WAS"))
+
+median_list <- c(CHIMed, NYCMed, WASMed)
+df_stats_median <- data.frame(CHIMed, NYCMed, WASMed)
+
+mean_list <- c(CHIMean, NYCMean, WASMean)
+df_stats_mean <- data.frame(CHIMean, NYCMean, WASMean)
+
+#Visualising the data
+
+plot1 <- ggplot(df_bikeshare_filtered, aes(df_bikeshare_filtered$trip_duration/60, fill= city_code, color = city_code, group = city_code,show.legend = FALSE)) +
+  scale_color_manual(values = c("#999999", "#E69F00", "#56B4E9")) +
+  scale_fill_manual(values= c("#999999", "#E69F00", "#56B4E9"))+
+  geom_histogram(binwidth = 0.25, show.legend = FALSE) +
+  facet_wrap(~city_code, nrow = 3, labeller = labeller(city_code = c("CHI" ="Chicago", 
+                                                           "NYC" = "New York City",
+                                                           "WAS" = "Washington"))) +
+  labs(title = "Comparison of Bike Rental Duration within a 24h Timespan") +
+  xlab("Trip Rental Time (hours)") +
+  ylab("Number of Bike Rentals") +
+  geom_text(data = median_values, mapping = aes(x = 6, y = 500, label = label), size = 3, color = "black") +
+  geom_vline(data = df_stats_median, aes(xintercept = median_list), linetype = "dashed", color = "black") +
+  geom_text(data = mean_values, mapping = aes(x = 6, y = 1500, label = label), size = 3, color = "white") +
+  geom_vline(data = df_stats_mean, aes(xintercept = mean_list), linetype = "dashed", color = "grey") +
+  labs(caption = "Figure 1: The mean and median rental times for bikes is very similar in the three cities.") +
+  theme(plot.caption = element_text(hjust = 0))
+
+plot1
+
+```
+
+```{r Question 1 summary}
+#Print out the summary statistics for all the cities
+print("Summary for Chicago Bikes with a <= 24 hour rental timespan")
+summary(CHI_filtered)
+
+print("Summary for New York City Bikes with a <= 24 hour rental timespan")
+summary(NYC_filtered)
+
+print("Summary for Washington Bikes with a <= 24 hour rental timespan")
+summary(WAS_filtered)
+
+```
+###ANSWER QUESTION 1: Discussion
+I wanted to investigate the differences and similarities in the rental time of the bikes in the three cities within 24 hours of users picking up the bike; i.e. how long does it take people to bring the bike back to a station after having rented it? To answer this question, I calculated the mean and median value for all rental times (trip duration) 24 hours and less for each city and plotted the corresponding distribution curve.
+
+What I found was that the distributions look very similar for the three cities: left skewed, with their peaks at a similar time. The graph for New York City shows a slightly higher and more defined peak than those of the other two cities. This fits with the fact that the medan and median rental durations in New York City is lower than in Chicago and Washington.
+
+Based on these results, I would like to further investigate these curves to see if othere parameters (such as the user type) will show additional differences between the three cities.
+
+###QUESTION 2
+Are there differences in the types of users (customer vs subscriber) for each city that rent and return bikes within 24 hours?
+
+###ANSWER QUESTION 2: Code
+````{r Question 2 visualisation}
+
+#Filter all data to only show "Customer" and "Subsrciber" for <= 24hours
+df_bikeshare_filtered2 <- df_bikeshare %>%
+  filter(trip_duration <= 1440)
+
+df_bikeshare_user <- df_bikeshare_filtered2 %>%
+  filter(df_bikeshare_filtered2$user_type == c("Customer", "Subscriber"))
+
+#Visualising the data
+
+plot2 <- ggplot(df_bikeshare_user, aes(x = df_bikeshare_user$trip_duration/60,  col = user_type)) +
+  geom_jitter(aes(col = user_type), size = 1, alpha = 0.25, stat = 'count') +
+  # scale_y_continuous(labels = scales::percent) +
+  labs(title = "Customer or Subscriber: Who Rents Bikes for 24h or less?") +
+  xlab("Trip Rental Time (hours)") +
+  ylab("Frequency of Bike Rentals") +
+  facet_wrap(~city_code, 
+             labeller = labeller(city_code = c("CHI" ="Chicago", 
+                                              "NYC" = "New York City",
+                                              "WAS" = "Washington"))) +
+  labs(caption = "Figure 2: Subscribers tend to rent bikes for shorter durations and customers.") +
+  theme(legend.title = element_blank(), strip.text = element_text(size = 11), plot.caption = element_text(hjust = 0))
+
+plot2
+
+```
+```{r Question 2 summary}
+
+#Generate the summary statistics for all the cities
+#Chicago
+
+df_bikeshare_user_CHI <- df_bikeshare_user %>%
+  filter(df_bikeshare_user$city_code == "CHI") %>%
+  select(start_time,
+         end_time,
+         trip_duration, 
+         user_type)
+df_bikeshare_customer_CHI <- df_bikeshare_user_CHI %>%
+  filter(df_bikeshare_user_CHI$user_type == "Customer") %>%
+  select(start_time,
+         end_time,
+         trip_duration)
+df_bikeshare_subscriber_CHI <- df_bikeshare_user_CHI %>%
+  filter(df_bikeshare_user_CHI$user_type == "Subscriber") %>%
+  select(start_time,
+         end_time,
+         trip_duration)
+
+#New York City
+df_bikeshare_user_NYC <- df_bikeshare_user %>%
+  filter(df_bikeshare_user$city_code == "NYC") %>%
+  select(start_time,
+         end_time,
+         trip_duration, 
+         user_type)
+df_bikeshare_customer_NYC <- df_bikeshare_user_NYC %>%
+  filter(df_bikeshare_user_NYC$user_type == "Customer") %>%
+  select(start_time,
+         end_time,
+         trip_duration)
+df_bikeshare_subscriber_NYC <- df_bikeshare_user_NYC %>%
+  filter(df_bikeshare_user_NYC$user_type == "Subscriber") %>%
+  select(start_time,
+         end_time,
+         trip_duration)
+
+#Washington
+df_bikeshare_user_WAS <- df_bikeshare_user %>%
+  filter(df_bikeshare_user$city_code == "WAS") %>%
+  select(start_time,
+         end_time,
+         trip_duration, 
+         user_type)
+df_bikeshare_customer_WAS<- df_bikeshare_user_WAS %>%
+  filter(df_bikeshare_user_WAS$user_type == "Customer") %>%
+  select(start_time,
+         end_time,
+         trip_duration)
+df_bikeshare_subscriber_WAS <- df_bikeshare_user_WAS %>%
+  filter(df_bikeshare_user_WAS$user_type == "Subscriber") %>%
+  select(start_time,
+         end_time,
+         trip_duration)
+
+#Print out the summary statistics for all the cities
+print("Summary for Bike Rentals of Customers in Chicago with a =< 24 hour Rental Timespan")
+summary(df_bikeshare_customer_CHI)
+print("Summary for Bike Rentals of Subscribers in Chicago with a =< 24 hour Rental Timespan")
+summary(df_bikeshare_subscriber_CHI)
+
+print("Summary for Bike Rentals of Customers in New York City with a =< 24 hour Rental Timespan")
+summary(df_bikeshare_customer_NYC)
+print("Summary for Bike Rentals of Subscribers in New York City with a =< 24 hour Rental Timespan")
+summary(df_bikeshare_subscriber_NYC)
+
+print("Summary for Bike Rentals of Customers in Washington with a =< 24 hour Rental Timespan")
+summary(df_bikeshare_customer_WAS)
+print("Summary for Bike Rentals of Subscribers in Washington with a =< 24 hour Rental Timespan")
+summary(df_bikeshare_subscriber_WAS)
+
+```
+
+###ANSWER QUESTION 2: Discussion
+The graphs show that in all three cities subscribers tend to rent the bikes for shorter durations than customers. This fits with the distribution being left-skewed for the subscribers, and right-skewed for the customers. This trend is seen most defined in New York City.
+
+To further investigate the differences in the behaviour of the subscribers and customers, I want to see if there are differenes in the days of the week when the bikes are picked up.
+
+###QUESTION 3:
+Are there differences in the days of the week when customers and subscribers rent bikes for 24 hours or less?
+
+###ANSWER QUESTION 3: Code
+```{r Question 3 data wrangling}
+
+#Ensure that the time is set to English (else the weekdays may be printed in German)
+Sys.setlocale("LC_TIME", "English")
+
+# Transforming start_date into weekdays and discarding all rows with user_type "NA" or "Dependent"
+df_stats <- df_bikeshare %>%
+  mutate(weekday = format(start_time, "%A")) %>%
+  filter(user_type == c("Customer","Subscriber")) %>%
+  select(start_time,
+         weekday,
+         city_code,
+         user_type)
+
+# Changing the weekday data type to factor and add levels (and order them correctly)
+df_stats$weekday <- factor(df_stats$weekday, levels = c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"))
+
+# Grouping by city_code and weekday in order to calculate stats for the bikeshare data frame. 
+# Creating variables for total rental (overall), total rentals per user type and their respecitve values expressed as a percentage.
+df_stats_grouped <- df_stats %>%
+  group_by(city_code, weekday) %>%
+  summarize(total_rentals = n(),
+            total_customers = sum(user_type =="Customer"),
+            total_subscribers = sum(user_type == "Subscriber"),
+            total_customers_percentage = round(total_customers*100/(total_customers+total_subscribers),1),
+            total_subscribers_percentage = round(total_subscribers*100/(total_customers+total_subscribers),1)) %>%
+  mutate(city_name = ifelse(city_code == "CHI", "Chicago", ifelse(city_code == "NYC", "New York City", "Washington")))
+
+# Reorder columns
+df_stats_grouped <- df_stats_grouped[,c(1,8,2:7)]
+
+# Split the data frame
+df_NYC <- df_stats_grouped %>% filter(city_code == "NYC")
+df_CHI <- df_stats_grouped %>% filter(city_code == "CHI")
+df_WAS <- df_stats_grouped %>% filter(city_code == "WAS")
+
+```
+```{r Question 3 visualisation}
+
+plot3 <- ggplot(df_stats, aes(x = df_stats$weekday, col = user_type)) +
+   geom_bar(aes(fill = user_type), position = 'dodge') +
+  annotate("text", x = 4, y = 42000, label = "Total Number of", size = 2.75) +
+  annotate("text", x = 4, y = 40000, label = "Bike Rentals per Day:", size = 2.75) +
+  geom_text(stat ='count', aes(label=..count..), y = 35000, angle = 90, size = 2.25, face = "bold", color = 'black') +
+  geom_text(stat = 'count', aes(label=..count..), angle = 90, size = 2, face = "bold", position=position_dodge(width=0.9), vjust=0.25, hjust=-0.25) +
+  scale_y_continuous(limit = c(0, 45000), breaks = seq(0, 25000, by = 5000)) +
+  scale_x_discrete(limits = c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")) +
+  labs(title = "Number of Weekday Bike Pick-Ups by Subscribers and Customers") +
+  xlab("Day of the Week") +
+  ylab("Number of Bikes Picked Up") +
+  facet_wrap(~city_code, labeller = labeller(city_code = c("CHI" ="Chicago", 
+                                                           "NYC" = "New York City",
+                                                           "WAS" = "Washington")),
+             ncol = 3, 
+             nrow = 1) +
+    labs(caption = "Figure 3: Subscribers tend to rent more bikes Monday - Friday than on weekends, \nwhereas the opposite is true for customers.") +
+  theme(legend.title = element_blank(), axis.text.x = element_text(angle = 90,vjust = 0.25), legend.title.align=-30, strip.text = element_text(size = 10), plot.caption = element_text(hjust = 0))
+
+plot3
+
+``` 
+``` {r Question 3 summary}
+#Generating summary statistics 
+
+df_CHI_sum <- df_CHI %>%
+  select(city_code, 
+         weekday, 
+         total_rentals,
+         total_customers,
+         total_subscribers, 
+         total_customers_percentage,
+         total_subscribers_percentage)
+
+df_NYC_sum <- df_NYC %>%
+  select(city_code, 
+         weekday, 
+         total_rentals,
+         total_customers,
+         total_subscribers, 
+         total_customers_percentage,
+         total_subscribers_percentage)
+
+df_WAS_sum <- df_WAS %>%
+  select(city_code, 
+         weekday, 
+         total_rentals,
+         total_customers,
+         total_subscribers, 
+         total_customers_percentage,
+         total_subscribers_percentage)
+
+#Print out the summary statistics for all the cities
+print("Comparing the Number of Weekday Bike Pick-Ups by Customers and Subscribers in Chicago")
+summary(df_CHI_sum)
+
+print("Comparing the Number of Weekday Bike Pick-Ups by Customers and Subscribers in New York City")
+summary(df_NYC_sum)
+
+print("Comparing the Number of Weekday Bike Pick-Ups by Customers and Subscribers in Washington")
+summary(df_WAS_sum)
+
+```
+###ANSWER QUESTION 3: Discussion
+The graphs show that in all cities subscribers rent more bikes during the week days Monday to Friday, and less on Saturday and Sunday. Customers follow the opposite trend, and rent more on Saturday and Sunday than during days Monday to Friday. Interestingly, this trend amongst the customers is not as extreme in New York City as it is in the other two cities. 
+
+In absolute numbers, we see significantly more subscribers than customers, and each day sees a different amount of bike rentals. To investigate this a bit more clearly, I calculated the percentage of customers and subscribers from the total number of bike rentals on each week day.  In Chicago, New York City, and Washington, the percentage of customers on week day range between 9.7%-17.0%, 5.9%-8.2%, and 16.9%-23.9%, repectively. On weekends the customer numbers are higher, woth 40.5%-40.9%, 19.5%-21.1%, and 45.3%-43.7%, respectively. As we can see, the percentage of customers in New York City is a lot lower than in the other two cities. For the subscribers, the percentages show the same trend: a drop in subscriber rentals on the weekend, with New York City showing the smallest decrease.
